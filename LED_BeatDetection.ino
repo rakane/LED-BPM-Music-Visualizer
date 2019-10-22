@@ -1,7 +1,7 @@
 #include "FastLED.h"
 
 #define NUM_LEDS 300        // How many leds in your strip?
-#define updateLEDS 3
+#define updateLEDS 5
 #define DATA_PIN 6          // led data transfer
 #define SAMPLEPERIODUS 200
 
@@ -16,9 +16,9 @@
 CRGB leds[NUM_LEDS];
 int red, green, blue;
 unsigned int count;
+const int waitTime = 16;
 
 void setup() {
-  Serial.begin(9600);
   randomSeed(analogRead(2));
 
   // Set ADC to 77khz, max for 10bit
@@ -47,8 +47,7 @@ float bassFilter(float sample) {
   xv[2] = (sample) / 3.f; // change here to values close to 2, to adapt for stronger or weeker sources of line level audio
 
   yv[0] = yv[1]; yv[1] = yv[2];
-  yv[2] = (xv[2] - xv[0])
-          + (-0.7960060012f * yv[0]) + (1.7903124146f * yv[1]);
+  yv[2] = (xv[2] - xv[0]) + (-0.7960060012f * yv[0]) + (1.7903124146f * yv[1]);
   return yv[2];
 }
 
@@ -68,8 +67,7 @@ float beatFilter(float sample) {
   xv[0] = xv[1]; xv[1] = xv[2];
   xv[2] = sample / 2.7f;
   yv[0] = yv[1]; yv[1] = yv[2];
-  yv[2] = (xv[2] - xv[0])
-          + (-0.7169861741f * yv[0]) + (1.4453653501f * yv[1]);
+  yv[2] = (xv[2] - xv[0]) + (-0.7169861741f * yv[0]) + (1.4453653501f * yv[1]);
   return yv[2];
 }
 
@@ -84,7 +82,7 @@ void loop() {
   unsigned long time = micros(); // Used to track rate
   float sample, value, envelope, beat, thresh;
 
-  if (count == 100) {
+  if (count == 200) {
     red = random(255);
     green = random(255);
     blue = random(255);
@@ -98,14 +96,18 @@ void loop() {
   value = bassFilter(sample);
 
   // Take signal amplitude and filter
-  value = abs(value);
+  if(value < 0) {
+    value = -value;
+  }
+  
   envelope = envelopeFilter(value);
 
   // Filter out repeating bass sounds 100 - 180bpm
   beat = beatFilter(envelope);
 
   // Adjustable threshold
-  thresh = 5.5;
+  // Can play around with this number
+  thresh = 2;
   
   //Shift LEDs
   shiftLEDS();
