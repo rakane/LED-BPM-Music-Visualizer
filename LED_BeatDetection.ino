@@ -1,9 +1,10 @@
 #include "FastLED.h"
 
 #define NUM_LEDS 300        // How many leds in your strip?
-#define updateLEDS 5
+#define UPDATE_LEDS 6
 #define DATA_PIN 6          // led data transfer
 #define SAMPLEPERIODUS 200
+#define BRIGHTNESS 255
 
 // defines for setting and clearing register bits
 #ifndef cbi
@@ -16,7 +17,6 @@
 CRGB leds[NUM_LEDS];
 int red, green, blue;
 unsigned int count;
-const int waitTime = 16;
 
 void setup() {
   randomSeed(analogRead(2));
@@ -32,11 +32,13 @@ void setup() {
   blue = 0;
   count = 0;
 
-  // Initialize LEDS and set all off
+  // Initialize all LEDs to off
   FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS);
   for (int i = 0; i < NUM_LEDS ; i++) {
     leds[i] = CRGB(0, 0, 0);
   }
+
+  FastLED.setBrightness(BRIGHTNESS);
   FastLED.show();
 }
 
@@ -73,8 +75,8 @@ float beatFilter(float sample) {
 
 // Shift all LEDs to the right by updateLEDS number each time
 void shiftLEDS() {
-  for (int i = NUM_LEDS - 1; i >= updateLEDS; i--) {
-    leds[i] = leds[i - updateLEDS];
+  for (int i = NUM_LEDS - 1; i >= UPDATE_LEDS; i--) {
+    leds[i] = leds[i - UPDATE_LEDS];
   }
 }
 
@@ -99,29 +101,29 @@ void loop() {
   if(value < 0) {
     value = -value;
   }
-  
+
   envelope = envelopeFilter(value);
 
   // Filter out repeating bass sounds 100 - 180bpm
   beat = beatFilter(envelope);
 
   // Adjustable threshold
-  // Can play around with this number
+  // Can play around with this number (recommended: 2 - 5)
   thresh = 2;
-  
+
   //Shift LEDs
   shiftLEDS();
-  
+
   // Check if beat was detected
   if (beat > thresh) {
     // Set the left most LEDS to new color
-    for (int i = 0; i < updateLEDS; i++) {
+    for (int i = 0; i < UPDATE_LEDS; i++) {
       leds[i] = CRGB(red, green, blue);
     }
   }
   else {
     // Set the left most LEDS off
-    for (int i = 0; i < updateLEDS; i++) {
+    for (int i = 0; i < UPDATE_LEDS; i++) {
       leds[i] = CRGB(0, 0, 0);
     }
   }
